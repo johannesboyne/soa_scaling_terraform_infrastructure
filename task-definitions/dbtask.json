@@ -1,0 +1,19 @@
+[
+  {
+    "name": "dbtask",
+    "image": "johannesboyne/terraform_example_db:0.1",
+    "cpu": 120,
+    "memory": 90,
+    "essential": true,
+    "portMappings": [
+      {
+        "containerPort": 1337,
+        "hostPort": 81
+      }
+    ],
+    "environment" : [
+      { "name" : "PORT", "value" : "1337" }
+    ],
+    "command": []
+  }
+]
