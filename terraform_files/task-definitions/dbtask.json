@@ -11,6 +11,13 @@
         "hostPort": 81
       }
     ],
+    "mountPoints": [
+      {
+        "sourceVolume": "persistend_data",
+        "containerPath": "/data/db",
+        "readOnly": false
+      }
+    ],
     "environment" : [
       { "name" : "PORT", "value" : "1337" }
     ],
