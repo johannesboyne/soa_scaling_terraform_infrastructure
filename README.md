@@ -54,7 +54,7 @@ _What Is?_:
  └──────────────────┘                      
 ```
 
-##Component
+##Components
 
 We'll build a two cluster, 4 service, scaled "web-application".
 The services could be build with any technology and because we're using docker
@@ -109,9 +109,9 @@ codification of our AWS infrastructure with Terraform.
 
 `Disclaimer: We're running on AWS and thus the following is AWS opinionated. Running the following terraform plans on your AWS infrastructure will cost money if you're not using an account that qualifies under the AWS free-tier.`
 
-**Prerequisits**
+*To give you an easy start I've created four individual docker images, one for each service from above: webpage, database api, api, company-bot*
 
-*To give you an easy start I've created four individual docker images, one for each service from above: webpage, json api, upload service, company slackbot*
+####Annotated Terraform files
 
 [terraform_files/main.tf](terraform_files/main.tf)
 
@@ -129,5 +129,31 @@ codification of our AWS infrastructure with Terraform.
 ```
 
 [terraform_files/task-definitions/dbtask.json](terraform_files/task-definitions/dbtask.json)
+
+####Using Packer and Atlas
+
+Right now, we only have used Terraform to codify our infrastructure and 
+automatically set it up.
+But, **what if you don't have pre-build docker containers?** I've got you covered.
+
+Packer and Atlas are a great team, because Packer is an absolutely great build
+tool for all kind of images and containers (Vagrant, AMI, DigitalOcean, Docker, ...)
+for various platforms.
+Atlas is Hashicorp's version control system for infrastructures **and** additionally
+it has got an implemented cloud-build service.
+If you are running docker on OS X you'll probably end using boot2docker.
+boot2docker is *all right*, it bridges the gap because OS X is not Linux and thus 
+one cannot easily run most docker containers and docker has not been ported 
+(completely) anyways, but for sure it's not a great because it uses a VM.
+This means, one has to run docker containers in a VM on OS X.
+
+Let me quote Bryan Cantrill:
+
+> People are running OS containers in VMs - don't do this. God is angry that you're
+doing this. God's like: What the hell? I dropped you containers there a while ago
+and I had some other work to do, and I just came back and what the hell is this?
+
+_(Actually this quote is a little bit missplaced because it was made to emphasize
+the solved solution of security concerns and docker containers, but it works here as well.)_
 
 
