@@ -112,11 +112,11 @@ codification of our AWS infrastructure with Terraform.
 ```
 ```
 
-[terraform_files/task-definitions/webtask.tf](terraform_files/task-definitions/webtask.tf)
+[terraform_files/task-definitions/webtask.json](terraform_files/task-definitions/webtask.json)
 
 ```
 ```
 
-[terraform_files/task-definitions/dbtask.tf](terraform_files/task-definitions/dbtask.tf)
+[terraform_files/task-definitions/dbtask.json](terraform_files/task-definitions/dbtask.json)
 
 
