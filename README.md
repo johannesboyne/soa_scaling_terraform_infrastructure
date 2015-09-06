@@ -15,7 +15,9 @@ _Disclaimer: I'm not a DevOps master nor ninja. Please, do not take everything a
 _What Is?_:
 
 * *[docker](https://www.docker.com/)*:
+
 > Docker is an open-source project that automates the deployment of applications inside software containers, by providing an additional layer of abstraction and automation of operating-system-level virtualization on Linux, Mac OS and Windows.[2]
+
 * *[Packer](https://packer.io/)*:
 * *[Terraform](https://terraform.io/)*:
 * *[Atlas](https://atlas.hashicorp.com/)*:
