@@ -13,36 +13,50 @@ resource "aws_iam_instance_profile" "ecsRole" {
     roles = ["${aws_iam_role.role.name}"]
 }
 
+resource "aws_iam_role_policy" "test_policy" {
+    name = "test_policy"
+    role = "${aws_iam_role.role.id}"
+    policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "elasticloadbalancing:Describe*",
+                "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+                "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+                "ec2:Describe*",
+                "ec2:AuthorizeSecurityGroupIngress",
+                "ecs:CreateCluster",
+                "ecs:DeregisterContainerInstance",
+                "ecs:DiscoverPollEndpoint",
+                "ecs:Poll",
+                "ecs:RegisterContainerInstance",
+                "ecs:Submit*"
+            ],
+            "Resource": [
+                "*"
+            ]
+        }
+    ]
+}
+EOF
+}
+
 resource "aws_iam_role" "role" {
     name = "ecsRole"
-    path = "/"
     assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
       "Effect": "Allow",
-      "Action": [
-        "elasticloadbalancing:Describe*",
-        "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
-        "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
-        "ec2:Describe*",
-        "ec2:AuthorizeSecurityGroupIngress",
-        "ecs:CreateCluster",
-        "ecs:DeregisterContainerInstance",
-        "ecs:DiscoverPollEndpoint",
-        "ecs:Poll",
-        "ecs:Submit*"
-        "ecs:StartTask",
-        "ecs:StopTask",
-        "ecs:RegisterContainerInstance",
-       ],
-      "Resource": ["*"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": "s3:PutObject",
-      "Resource": "arn:aws:s3:::elasticbeanstalk-*/resources/environments/logs/*"
+      "Sid": ""
     }
   ]
 }
@@ -90,8 +104,8 @@ resource "aws_elb" "web" {
 
   instances = ["${aws_instance.web_db.id}"]
 }
-resource "aws_elb" "api" {
-  name = "terraform-api-elb"
+resource "aws_elb" "db" {
+  name = "terraform-db-elb"
   availability_zones = ["${var.aws_region}a"]
   security_groups = ["${aws_security_group.default.id}"]
 
@@ -104,8 +118,8 @@ resource "aws_elb" "api" {
 
   instances = ["${aws_instance.web_db.id}"]
 }
-resource "aws_elb" "db" {
-  name = "terraform-db-elb"
+resource "aws_elb" "api" {
+  name = "terraform-api-elb"
   availability_zones = ["${var.aws_region}a"]
   security_groups = ["${aws_security_group.default.id}"]
 
@@ -136,7 +150,7 @@ resource "aws_autoscaling_group" "api_bot" {
   min_size = 1
   health_check_grace_period = 300
   health_check_type = "ELB"
-  desired_capacity = 0
+  desired_capacity = 1
   force_delete = true
   launch_configuration = "${aws_launch_configuration.api_bot.name}"
   tag {
@@ -150,11 +164,10 @@ resource "aws_autoscaling_group" "api_bot" {
 # autoscaling instances for the bot and api
 resource "aws_launch_configuration" "api_bot" {
     name = "ECS ${aws_ecs_cluster.b.name}"
-    image_id = "ami-b7f0f987"
+    image_id = "ami-5721df13"
     # prod -> t2.micro
     instance_type = "t2.micro"
     security_groups = ["${aws_security_group.default.id}"]
-    key_name = "us-west-ecs"
     iam_instance_profile = "ecsRole"
     # using the user_data field to attach the instance to an ecs cluster
     # and configuring the docker user if necessary
@@ -162,12 +175,11 @@ resource "aws_launch_configuration" "api_bot" {
 }
 # single instance for the web-app and the db
 resource "aws_instance" "web_db" {
-  ami = "ami-b7f0f987"
+  ami = "ami-5721df13"
   instance_type = "t2.micro"
   availability_zone = "${var.aws_region}a"
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
   iam_instance_profile = "ecsRole"
-  key_name = "us-west-ecs"
   tags {
     Name = "Web-and-DB"
   }
@@ -179,7 +191,7 @@ resource "aws_volume_attachment" "ebs_att" {
   device_name = "/dev/xvdh"
   # existing volume, because we don't want to loose any data
   # this is the only item not defined in this terraform script
-  volume_id = "vol-cc9933d9"
+  volume_id = "vol-df04493a"
   instance_id = "${aws_instance.web_db.id}"
   
 }

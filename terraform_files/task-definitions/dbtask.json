@@ -1,7 +1,7 @@
 [
   {
     "name": "dbtask",
-    "image": "johannesboyne/terraform_example_db:0.1",
+    "image": "johannesboyne/webexample",
     "cpu": 120,
     "memory": 90,
     "essential": true,
@@ -19,7 +19,8 @@
       }
     ],
     "environment" : [
-      { "name" : "PORT", "value" : "1337" }
+      { "name" : "PORT", "value" : "1337" },
+      { "name" : "SERVICE", "value" : "db" }
     ],
     "command": []
   }

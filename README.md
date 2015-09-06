@@ -102,4 +102,21 @@ codification of our AWS infrastructure with Terraform.
 
 *To give you an easy start I've created four individual docker images, one for each service from above: webpage, json api, upload service, company slackbot*
 
-**Terraform main file**
+[terraform_files/main.tf](terraform_files/main.tf)
+
+```
+```
+
+[terraform_files/variables.tf](terraform_files/variables.tf)
+
+```
+```
+
+[terraform_files/task-definitions/webtask.tf](terraform_files/task-definitions/webtask.tf)
+
+```
+```
+
+[terraform_files/task-definitions/dbtask.tf](terraform_files/task-definitions/dbtask.tf)
+
+
