@@ -194,29 +194,39 @@ resource "aws_elb" "api" {
 }
 
 # scaling ---------------------------------------------------------------------
-resource "aws_autoscaling_group" "api_bot" {
+resource "aws_autoscaling_group" "api" {
   availability_zones = ["${var.aws_region}a"]
-  name = "api_bot-terraform-example"
+  name = "api-terraform-example"
   max_size = 2
   min_size = 1
   health_check_grace_period = 300
   health_check_type = "ELB"
   desired_capacity = 1
   force_delete = true
-  launch_configuration = "${aws_launch_configuration.api_bot.name}"
+  launch_configuration = "${aws_launch_configuration.api.name}"
   tag {
     key = "name"
-    value = "api_bot"
+    value = "api"
     propagate_at_launch = true
   }
   
 }
+
+# cluster ---------------------------------------------------------------------
+# cluster A: web, db
+resource "aws_ecs_cluster" "a" {
+  name = "berlin"
+}
+# cluster B: api
+resource "aws_ecs_cluster" "b" {
+  name = "munich"
+}
+
 # instances -------------------------------------------------------------------
-# autoscaling instances for the bot and api
-resource "aws_launch_configuration" "api_bot" {
+# autoscaling instances for the api
+resource "aws_launch_configuration" "api" {
     name = "ECS ${aws_ecs_cluster.b.name}"
     image_id = "ami-5721df13"
-    # prod -> t2.micro
     instance_type = "t2.micro"
     security_groups = ["${aws_security_group.default.id}"]
     iam_instance_profile = "${aws_iam_instance_profile.ecsRole.name}"
@@ -245,16 +255,6 @@ resource "aws_volume_attachment" "ebs_att" {
   volume_id = "vol-df04493a"
   instance_id = "${aws_instance.web_db.id}"
   
-}
-
-# cluster ---------------------------------------------------------------------
-# cluster A: web, db
-resource "aws_ecs_cluster" "a" {
-  name = "berlin"
-}
-# cluster B: api, bot
-resource "aws_ecs_cluster" "b" {
-  name = "munich"
 }
 
 # services --------------------------------------------------------------------
@@ -319,11 +319,6 @@ resource "aws_ecs_task_definition" "dbtask" {
 resource "aws_ecs_task_definition" "apitask" {
   family = "apitask"
   container_definitions = "${file("task-definitions/apitask.json")}"
-}
-# bottask
-resource "aws_ecs_task_definition" "bottask" {
-  family = "bottask"
-  container_definitions = "${file("task-definitions/bottask.json")}"
 }
 
 output "service: web" {

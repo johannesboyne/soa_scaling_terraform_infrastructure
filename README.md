@@ -56,7 +56,7 @@ _What Is?_:
 
 ##Components
 
-We'll build a two cluster, 4 service, scaled "web-application", running on the 
+We'll build a two cluster, 3 service, scaled "web-application", running on the 
 amazon cloud.
 The services could be build with any technology and because we're using Docker
 it really would not change *anything*.
