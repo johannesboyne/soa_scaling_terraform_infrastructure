@@ -2,11 +2,9 @@
 
 ---
 
-# A 100% codified, scaling (Micro-)Service-Oriented-Architecture (SOA) with Docker, Packer, Terraform and Atlas
+# A 100% codified, scaling (Micro-)Service-Oriented-Architecture (SOA) with Docker and Terraform
 
-Fair enough, enough with the buzzword-bingo but seriously, this README will be buzzword *packed*.
-And that's O.K. since Docker, Packer, Terraform and Atlas are simply great.
-Props to the [HASHICORP](https://hashicorp.com/) team for creating these amazing tools.
+Props to the [hashicorp](https://hashicorp.com/) team for creating amazing tools.
 
 _Disclaimer: I'm not a DevOps master nor ninja. Please, do not take everything as a best practice._
 
@@ -18,17 +16,9 @@ _What Is?_:
 
 > Docker is an open-source project that automates the deployment of applications inside software containers, by providing an additional layer of abstraction and automation of operating-system-level virtualization on Linux, Mac OS and Windows. [Wikipedia](https://en.wikipedia.org/wiki/Docker_(software))
 
-* *[Packer](https://packer.io/)*:
-
-> Packer is a tool for creating machine and container images for multiple platforms from a single source configuration. [Packer.io](http://packer.io)
-
 * *[Terraform](https://terraform.io/)*:
 
 > Terraform provides a common configuration to launch infrastructure — from physical and virtual servers to email and DNS providers. [Terraform.io](https://terraform.io/)
-
-* *[Atlas](https://atlas.hashicorp.com/)*:
-
-> Atlas unites HashiCorp development and infrastructure management tools to create a version control system for infrastructure. [Atlas](https://atlas.hashicorp.com/)
 
 ##Workflow
 
@@ -39,8 +29,8 @@ _What Is?_:
  └──────────────────┘                      
            │                               
            ▼                               
- ┌──────────────────┐  Packer (push build config.)
- │     2. Build     │  Atlas  (run cloud build)
+ ┌──────────────────┐  Packer (push build config.)  <- not needed for now
+ │     2. Build     │  Atlas  (run cloud build)     <- but it will come!
  └──────────────────┘                      
            │                               
            ▼                               
