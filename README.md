@@ -2,10 +2,10 @@
 
 ---
 
-# A 100% codified, scaling (Micro-)Service-Oriented-Architecture (SOA) with docker, Packer, Terraform and Atlas
+# A 100% codified, scaling (Micro-)Service-Oriented-Architecture (SOA) with Docker, Packer, Terraform and Atlas
 
 Fair enough, enough with the buzzword-bingo but seriously, this README will be buzzword *packed*.
-And that's O.K. since docker, Packer, Terraform and Atlas are simply great.
+And that's O.K. since Docker, Packer, Terraform and Atlas are simply great.
 Props to the [HASHICORP](https://hashicorp.com/) team for creating these amazing tools.
 
 _Disclaimer: I'm not a DevOps master nor ninja. Please, do not take everything as a best practice._
@@ -14,7 +14,7 @@ _Disclaimer: I'm not a DevOps master nor ninja. Please, do not take everything a
 
 _What Is?_:
 
-* *[docker](https://www.docker.com/)*:
+* *[Docker](https://www.Docker.com/)*:
 
 > Docker is an open-source project that automates the deployment of applications inside software containers, by providing an additional layer of abstraction and automation of operating-system-level virtualization on Linux, Mac OS and Windows. [Wikipedia](https://en.wikipedia.org/wiki/Docker_(software))
 
@@ -35,7 +35,7 @@ _What Is?_:
 ```
                                            
  ┌──────────────────┐  Local-Dev. Machine  
- │    1. Develop    │  docker              
+ │    1. Develop    │  Docker              
  └──────────────────┘                      
            │                               
            ▼                               
@@ -49,18 +49,19 @@ _What Is?_:
  └ ─ ─ ─ ─ ┼ ─ ─ ─ ─                       
                                            
            ▼                               
- ┌──────────────────┐  docker              
+ ┌──────────────────┐  Docker              
  │    3. Deploy     │  Terraform           
  └──────────────────┘                      
 ```
 
 ##Components
 
-We'll build a two cluster, 4 service, scaled "web-application".
-The services could be build with any technology and because we're using docker
+We'll build a two cluster, 4 service, scaled "web-application", running on the 
+amazon cloud.
+The services could be build with any technology and because we're using Docker
 it really would not change *anything*.
 
-*Terminilogy:*
+*Terminilogy:* (AWS centric)
 
 * ELB = Elastic Load Balancer
 * ECS = Elastic Cloud Service
@@ -74,7 +75,6 @@ it really would not change *anything*.
 * ELB (s A.x) -> www.ourwebapp.com (HTML Webpage)
 * ELB (s A.y) -> db.ourwebapp.com (Database Service)
 * ELB (s B.u) -> api.ourwebapp.com (JSON API)
-* ELB (s B.v) -> slackbot.ourwebapp.com (Company Slackbot)
 
 ```
                      ┌──────────────────────────────────────────────────┐                           
@@ -94,9 +94,9 @@ it really would not change *anything*.
                      ┌──────────────────────────────────────────────────┐                           
   ┌─────────────┐    │                 ┌────────────┬──────────────┐    │                           
   │ ELB (s B.u) │────┼─────────────────┼────────────┼▶Service B.u  │    │                           
-  ├─────────────┤    │                 │Instance B.1├──────────────┤    │                           
-  │ ELB (s B.v) │────┼─────────────────┼────────────┼▶Service B.v  │    │                           
-  └─────────────┘    │                 ├────────────┴──────────────┘    │                           
+  └─────────────┘    │                 │Instance B.1├──────────────┘    │                           
+                     │                 │            │                   │                           
+                     │                 └────────────┘                   │                           
                      │                              │                   │                           
                      │                 │Instance B.n                    │                           
                      │                              │                   │                           
@@ -107,9 +107,9 @@ it really would not change *anything*.
 Enough with the theory, let's dive into the code. We'll begin with the
 codification of our AWS infrastructure with Terraform.
 
-`Disclaimer: We're running on AWS and thus the following is AWS opinionated. Running the following terraform plans on your AWS infrastructure will cost money if you're not using an account that qualifies under the AWS free-tier.`
+`Disclaimer: We're running on AWS and thus the following is AWS opinionated. Running the following terraform plans on your AWS infrastructure will cost money unless you're using an account that qualifies under the AWS free-tier.`
 
-*To give you an easy start I've created four individual docker images, one for each service from above: webpage, database api, api, company-bot*
+*To give you an easy start I've created four individual Docker images, one for each service from above: webpage, database api, api, company-bot*
 
 ####Annotated Terraform files
 
@@ -310,18 +310,7 @@ resource "aws_elb" "api" {
     lb_protocol = "http"
   }
 }
-resource "aws_elb" "slackbot" {
-  name = "terraform-slackbot-elb"
-  availability_zones = ["${var.aws_region}a"]
-  security_groups = ["${aws_security_group.default.id}"]
 
-  listener {
-    instance_port = 81
-    instance_protocol = "http"
-    lb_port = 80
-    lb_protocol = "http"
-  }
-}
 # scaling ---------------------------------------------------------------------
 resource "aws_autoscaling_group" "api_bot" {
   availability_zones = ["${var.aws_region}a"]
@@ -350,8 +339,8 @@ resource "aws_launch_configuration" "api_bot" {
     security_groups = ["${aws_security_group.default.id}"]
     iam_instance_profile = "${aws_iam_instance_profile.ecsRole.name}"
     # using the user_data field to attach the instance to an ecs cluster
-    # and configuring the docker user if necessary
-    user_data = "#!/bin/bash\necho 'ECS_CLUSTER=${aws_ecs_cluster.b.name}\nECS_ENGINE_AUTH_TYPE=dockercfg\nECS_ENGINE_AUTH_DATA={\"${var.registry}\": {\"auth\": \"${var.auth}\",\"email\": \"${var.email}\"}}' >> /etc/ecs/ecs.config"
+    # and configuring the Docker user if necessary
+    user_data = "#!/bin/bash\necho 'ECS_CLUSTER=${aws_ecs_cluster.b.name}\nECS_ENGINE_AUTH_TYPE=Dockercfg\nECS_ENGINE_AUTH_DATA={\"${var.registry}\": {\"auth\": \"${var.auth}\",\"email\": \"${var.email}\"}}' >> /etc/ecs/ecs.config"
 }
 # single instance for the web-app and the db
 resource "aws_instance" "web_db" {
@@ -363,7 +352,7 @@ resource "aws_instance" "web_db" {
   tags {
     Name = "Web-and-DB"
   }
-  user_data = "#!/bin/bash\nmkdir /data; mount /dev/xvdh /data; service docker restart; echo 'ECS_CLUSTER=${aws_ecs_cluster.a.name}\nECS_ENGINE_AUTH_TYPE=dockercfg\nECS_ENGINE_AUTH_DATA={\"${var.registry}\": {\"auth\": \"${var.auth}\",\"email\": \"${var.email}\"}}' >> /etc/ecs/ecs.config;"
+  user_data = "#!/bin/bash\nmkdir /data; mount /dev/xvdh /data; service Docker restart; echo 'ECS_CLUSTER=${aws_ecs_cluster.a.name}\nECS_ENGINE_AUTH_TYPE=Dockercfg\nECS_ENGINE_AUTH_DATA={\"${var.registry}\": {\"auth\": \"${var.auth}\",\"email\": \"${var.email}\"}}' >> /etc/ecs/ecs.config;"
 }
 
 # volumes ---------------------------------------------------------------------
@@ -429,20 +418,6 @@ resource "aws_ecs_service" "api" {
     container_port = 1337
   }
 }
-# apiservice
-resource "aws_ecs_service" "bot" {
-  name = "bot"
-  cluster = "${aws_ecs_cluster.b.id}"
-  task_definition = "${aws_ecs_task_definition.bottask.arn}"
-  desired_count = 1
-  iam_role = "${aws_iam_role.role_service.arn}"
-
-  load_balancer {
-    elb_name = "${aws_elb.slackbot.id}"
-    container_name = "bottask"
-    container_port = 1337
-  }
-}
 
 # webtask
 resource "aws_ecs_task_definition" "webtask" {
@@ -478,9 +453,6 @@ output "service: db" {
 output "service: api" {
   value = "${aws_elb.api.dns_name}"
 }
-output "service: slackbot" {
-  value = "${aws_elb.slackbot.dns_name}"
-}
 ```
 
 [terraform_files/variables.tf](terraform_files/variables.tf)
@@ -498,7 +470,7 @@ variable "secret_key" {
 }
 variable "registry" {
     description = "Docker registry"
-    default = "https://index.docker.io/v1/"
+    default = "https://index.Docker.io/v1/"
 }
 variable "auth" {
     description = "Docker auth token"
@@ -588,32 +560,6 @@ variable "email" {
   }
 ]
 ```
-
-[terraform_files/task-definitions/bottask.json](terraform_files/task-definitions/bottask.json)
-
-```
-[
-  {
-    "name": "bottask",
-    "image": "johannesboyne/webexample",
-    "cpu": 120,
-    "memory": 90,
-    "essential": true,
-    "portMappings": [
-      {
-        "containerPort": 1337,
-        "hostPort": 81
-      }
-    ],
-    "environment" : [
-      { "name" : "SERVICE", "value" : "slackbot" },
-      { "name" : "PORT", "value" : "1337" }
-    ],
-    "command": []
-  }
-]
-```
-
 ####Running the commands
 
 Now, let's begin with the magic, we can check whether the plan suits our needs,
@@ -631,18 +577,18 @@ balancers, because the instances have to be initiated and added before.
 
 Right now, we only have used Terraform to codify our infrastructure and 
 automatically set it up.
-But, **what if you don't have pre-build docker containers?** I've got you covered.
+But, **what if you don't have pre-build Docker containers?** I've got you covered.
 
 Packer and Atlas are a great team, because Packer is an absolutely great build
 tool for all kind of images and containers (Vagrant, AMI, DigitalOcean, Docker, ...)
 for various platforms.
 Atlas is Hashicorp's version control system for infrastructures **and** additionally
 it has got an implemented cloud-build service.
-If you are running docker on OS X you'll probably end using boot2docker.
-boot2docker is *all right*, it bridges the gap because OS X is not Linux and thus 
-one cannot easily run most docker containers and docker has not been ported 
+If you are running Docker on OS X you'll probably end using boot2Docker.
+boot2Docker is *alright*, it bridges the gap because OS X is not Linux and thus 
+one cannot easily run most Docker containers and Docker has not been ported 
 (completely) anyways, but for sure it's not a great because it uses a VM.
-This means, one has to run docker containers in a VM on OS X.
+This means, one has to run Docker containers in a VM on OS X.
 
 Let me quote [Bryan Cantrill](https://github.com/bcantrill): https://www.youtube.com/watch?v=Ll50EFquwSo
 
@@ -650,19 +596,19 @@ Let me quote [Bryan Cantrill](https://github.com/bcantrill): https://www.youtube
 doing this. God's like: What the hell? I dropped you containers there a while ago
 and I had some other work to do, and I just came back and what the hell is this?
 
-_(Actually this quote was made to emphasize the (solved) "problem" regarding security concerns with docker containers, but it works here as well.)_
+_(Actually this quote was made to emphasize the (solved) "problem" regarding security concerns with Docker containers, but it works here as well.)_
 
 Packer and Atlas are here to save us. The `packer push` command pushes a packer
-build file to the Atlas build service, which than generates our docker images - fast
-and without eating our development machines resources.
+build file to the Atlas build service, which then generates our Docker images - fast
+and without eating our development machine's resources.
 
-But besides this awesome, easy, external docker image build-service, using Packer
+But besides this awesome, easy, external Docker image build-service, using Packer
 comes with another advantage: moving your infrastructure to another cloud provider 
 or even to on-prem. becomes as easy as flipping a switch.
 
-Because the docker images where given, we didn't had to build these images but 
-I'll show you how a packer build file looks like for a real world application 
-a **[keystone.js](http://keystonejs.com/) CMS** in a second mini-tutorial on 
+Because the Docker images where given, we didn't have to build these images ourselves, but 
+I'll show you how a packer build file looks like, for a real world application, 
+a **[keystone.js](http://keystonejs.com/) CMS**, in a second mini-tutorial on 
 Packer, Atlas, Terraform and containers.
 
 ####Structuring a Terraform configuration

@@ -192,18 +192,7 @@ resource "aws_elb" "api" {
     lb_protocol = "http"
   }
 }
-resource "aws_elb" "slackbot" {
-  name = "terraform-slackbot-elb"
-  availability_zones = ["${var.aws_region}a"]
-  security_groups = ["${aws_security_group.default.id}"]
 
-  listener {
-    instance_port = 81
-    instance_protocol = "http"
-    lb_port = 80
-    lb_protocol = "http"
-  }
-}
 # scaling ---------------------------------------------------------------------
 resource "aws_autoscaling_group" "api_bot" {
   availability_zones = ["${var.aws_region}a"]
@@ -311,20 +300,6 @@ resource "aws_ecs_service" "api" {
     container_port = 1337
   }
 }
-# apiservice
-resource "aws_ecs_service" "bot" {
-  name = "bot"
-  cluster = "${aws_ecs_cluster.b.id}"
-  task_definition = "${aws_ecs_task_definition.bottask.arn}"
-  desired_count = 1
-  iam_role = "${aws_iam_role.role_service.arn}"
-
-  load_balancer {
-    elb_name = "${aws_elb.slackbot.id}"
-    container_name = "bottask"
-    container_port = 1337
-  }
-}
 
 # webtask
 resource "aws_ecs_task_definition" "webtask" {
@@ -359,7 +334,4 @@ output "service: db" {
 }
 output "service: api" {
   value = "${aws_elb.api.dns_name}"
-}
-output "service: slackbot" {
-  value = "${aws_elb.slackbot.dns_name}"
 }
