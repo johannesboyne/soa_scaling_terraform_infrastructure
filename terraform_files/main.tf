@@ -8,15 +8,18 @@ provider "aws" {
 }
 
 # iam instance profile --------------------------------------------------------
+# this role is needed to setup the ECS instances
 resource "aws_iam_instance_profile" "ecsRole" {
     name = "ecsRole"
     roles = ["${aws_iam_role.role.name}"]
 }
+# this role is needed to setup the ECS services
 resource "aws_iam_instance_profile" "ecsService" {
-    name = "ecsService"
-    roles = ["${aws_iam_role.role.name}"]
+    name = "ecsServiceProfile"
+    roles = ["${aws_iam_role.role_service.name}"]
 }
 
+# instance policy
 resource "aws_iam_role_policy" "instance_policy" {
     name = "instance_policy"
     role = "${aws_iam_role.role.id}"
@@ -47,6 +50,7 @@ resource "aws_iam_role_policy" "instance_policy" {
 }
 EOF
 }
+# service policy
 resource "aws_iam_role_policy" "service_policy" {
     name = "service_policy"
     role = "${aws_iam_role.role_service.id}"
@@ -60,13 +64,16 @@ resource "aws_iam_role_policy" "service_policy" {
         "elasticloadbalancing:Describe*",
         "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
         "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
-        "ecs:CreateCluster",
+        "ec2:Describe*",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ecs:StartTask",
+        "ecs:StopTask",
+        "ecs:RegisterContainerInstance",
         "ecs:DeregisterContainerInstance",
         "ecs:DiscoverPollEndpoint",
-        "ecs:Poll",
-        "ecs:RegisterContainerInstance",
+        "ecs:Submit*",
         "ecs:StartTelemetrySession",
-        "ecs:Submit*"
+        "ecs:Poll"
       ],
       "Resource": "*"
     }
@@ -75,6 +82,8 @@ resource "aws_iam_role_policy" "service_policy" {
 EOF
 }
 
+# instance role
+# assume role statement is mandatory
 resource "aws_iam_role" "role" {
     name = "ecsRole"
     assume_role_policy = <<EOF
@@ -93,7 +102,8 @@ resource "aws_iam_role" "role" {
 }
 EOF
 }
-
+# service role
+# assume role statement is mandatory
 resource "aws_iam_role" "role_service" {
     name = "ecsService"
     assume_role_policy = <<EOF
@@ -103,7 +113,7 @@ resource "aws_iam_role" "role_service" {
     {
       "Action": "sts:AssumeRole",
       "Principal": {
-        "Service": "ec2.amazonaws.com"
+        "Service": "ecs.amazonaws.com"
       },
       "Effect": "Allow",
       "Sid": ""
@@ -114,6 +124,7 @@ EOF
 }
 
 # security groups -------------------------------------------------------------
+# used for the load balancers etc.
 resource "aws_security_group" "default" {
     name = "terraform_example"
 
@@ -140,6 +151,7 @@ resource "aws_security_group" "default" {
 }
 
 # load balancers --------------------------------------------------------------
+# four services -> four load balancers
 resource "aws_elb" "web" {
   name = "terraform-example-elb"
   availability_zones = ["${var.aws_region}a"]
@@ -218,7 +230,7 @@ resource "aws_launch_configuration" "api_bot" {
     # prod -> t2.micro
     instance_type = "t2.micro"
     security_groups = ["${aws_security_group.default.id}"]
-    iam_instance_profile = "ecsRole"
+    iam_instance_profile = "${aws_iam_instance_profile.ecsRole.name}"
     # using the user_data field to attach the instance to an ecs cluster
     # and configuring the docker user if necessary
     user_data = "#!/bin/bash\necho 'ECS_CLUSTER=${aws_ecs_cluster.b.name}\nECS_ENGINE_AUTH_TYPE=dockercfg\nECS_ENGINE_AUTH_DATA={\"${var.registry}\": {\"auth\": \"${var.auth}\",\"email\": \"${var.email}\"}}' >> /etc/ecs/ecs.config"
@@ -229,7 +241,7 @@ resource "aws_instance" "web_db" {
   instance_type = "t2.micro"
   availability_zone = "${var.aws_region}a"
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
-  iam_instance_profile = "ecsRole"
+  iam_instance_profile = "${aws_iam_instance_profile.ecsRole.name}"
   tags {
     Name = "Web-and-DB"
   }
@@ -247,9 +259,11 @@ resource "aws_volume_attachment" "ebs_att" {
 }
 
 # cluster ---------------------------------------------------------------------
+# cluster A: web, db
 resource "aws_ecs_cluster" "a" {
   name = "berlin"
 }
+# cluster B: api, bot
 resource "aws_ecs_cluster" "b" {
   name = "munich"
 }
@@ -283,6 +297,34 @@ resource "aws_ecs_service" "db" {
     container_port = 1337
   }
 }
+# apiservice
+resource "aws_ecs_service" "api" {
+  name = "api"
+  cluster = "${aws_ecs_cluster.b.id}"
+  task_definition = "${aws_ecs_task_definition.apitask.arn}"
+  desired_count = 1
+  iam_role = "${aws_iam_role.role_service.arn}"
+
+  load_balancer {
+    elb_name = "${aws_elb.api.id}"
+    container_name = "apitask"
+    container_port = 1337
+  }
+}
+# apiservice
+resource "aws_ecs_service" "bot" {
+  name = "bot"
+  cluster = "${aws_ecs_cluster.b.id}"
+  task_definition = "${aws_ecs_task_definition.bottask.arn}"
+  desired_count = 1
+  iam_role = "${aws_iam_role.role_service.arn}"
+
+  load_balancer {
+    elb_name = "${aws_elb.slackbot.id}"
+    container_name = "bottask"
+    container_port = 1337
+  }
+}
 
 # webtask
 resource "aws_ecs_task_definition" "webtask" {
@@ -298,8 +340,26 @@ resource "aws_ecs_task_definition" "dbtask" {
     host_path = "/data/db"
   }
 }
+# apitask
+resource "aws_ecs_task_definition" "apitask" {
+  family = "apitask"
+  container_definitions = "${file("task-definitions/apitask.json")}"
+}
+# bottask
+resource "aws_ecs_task_definition" "bottask" {
+  family = "bottask"
+  container_definitions = "${file("task-definitions/bottask.json")}"
+}
 
-
-output "role" {
-  value = "${aws_iam_role.role.arn}"
+output "service: web" {
+  value = "${aws_elb.web.dns_name}"
+}
+output "service: db" {
+  value = "${aws_elb.db.dns_name}"
+}
+output "service: api" {
+  value = "${aws_elb.api.dns_name}"
+}
+output "service: slackbot" {
+  value = "${aws_elb.slackbot.dns_name}"
 }

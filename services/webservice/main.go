@@ -23,7 +23,7 @@ func updateAndGetCount() string {
 	var count string
 	var err error
 	if db == nil {
-		db, err = bolt.Open("/data/my.db", 0600, nil)
+		db, err = bolt.Open("/data/db/my.db", 0600, nil)
 		handleBoltError(err)
 		err = db.Update(func(tx *bolt.Tx) error {
 			b, err := tx.CreateBucketIfNotExists([]byte("counter"))

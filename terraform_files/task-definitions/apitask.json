@@ -1,0 +1,20 @@
+[
+  {
+    "name": "apitask",
+    "image": "johannesboyne/webexample",
+    "cpu": 120,
+    "memory": 90,
+    "essential": true,
+    "portMappings": [
+      {
+        "containerPort": 1337,
+        "hostPort": 80
+      }
+    ],
+    "environment" : [
+      { "name" : "SERVICE", "value" : "api" },
+      { "name" : "PORT", "value" : "1337" }
+    ],
+    "command": []
+  }
+]

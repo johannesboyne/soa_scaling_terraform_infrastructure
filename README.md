@@ -130,6 +130,15 @@ codification of our AWS infrastructure with Terraform.
 
 [terraform_files/task-definitions/dbtask.json](terraform_files/task-definitions/dbtask.json)
 
+####Running the commands
+
+Now, let's begin with the magic, we can check whether the plan suits our needs,
+by running `terraform plan` (your variables can either be set inline or inside
+a `variables.tf` file).
+
+Constructing our infrastructure is as easy as: `terraform apply` and destroying
+it afterwards can be achieved by running: `terraform destroy`.
+
 ####Using Packer and Atlas
 
 Right now, we only have used Terraform to codify our infrastructure and 
@@ -165,4 +174,17 @@ or even to on-prem. becomes as easy as flipping a switch.
 
 Because the docker images where given, we didn't had to build these images but 
 I'll show you how a packer build file looks like for a real world application 
-a **[keystone.js](http://keystonejs.com/) CMS** in a second mini-tutorial on Packer, Atlas, Terraform and containers.
+a **[keystone.js](http://keystonejs.com/) CMS** in a second mini-tutorial on 
+Packer, Atlas, Terraform and containers.
+
+####Structuring a Terraform configuration
+
+In a production environment one should probably use multiple files to describe the infrastructure.
+
+##Troubleshooting
+
+```
+diffs didn't match during apply. This is a bug with Terraform and should be reported
+```
+
+`->` delete the `terraform.tfstate*` file(s).
