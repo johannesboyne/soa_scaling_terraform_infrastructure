@@ -12,9 +12,13 @@ resource "aws_iam_instance_profile" "ecsRole" {
     name = "ecsRole"
     roles = ["${aws_iam_role.role.name}"]
 }
+resource "aws_iam_instance_profile" "ecsService" {
+    name = "ecsService"
+    roles = ["${aws_iam_role.role.name}"]
+}
 
-resource "aws_iam_role_policy" "test_policy" {
-    name = "test_policy"
+resource "aws_iam_role_policy" "instance_policy" {
+    name = "instance_policy"
     role = "${aws_iam_role.role.id}"
     policy = <<EOF
 {
@@ -43,9 +47,55 @@ resource "aws_iam_role_policy" "test_policy" {
 }
 EOF
 }
+resource "aws_iam_role_policy" "service_policy" {
+    name = "service_policy"
+    role = "${aws_iam_role.role_service.id}"
+    policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "elasticloadbalancing:Describe*",
+        "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+        "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+        "ecs:CreateCluster",
+        "ecs:DeregisterContainerInstance",
+        "ecs:DiscoverPollEndpoint",
+        "ecs:Poll",
+        "ecs:RegisterContainerInstance",
+        "ecs:StartTelemetrySession",
+        "ecs:Submit*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
 
 resource "aws_iam_role" "role" {
     name = "ecsRole"
+    assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role" "role_service" {
+    name = "ecsService"
     assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -205,12 +255,13 @@ resource "aws_ecs_cluster" "b" {
 }
 
 # services --------------------------------------------------------------------
+# webservice
 resource "aws_ecs_service" "web" {
   name = "web"
   cluster = "${aws_ecs_cluster.a.id}"
   task_definition = "${aws_ecs_task_definition.webtask.arn}"
   desired_count = 1
-  iam_role = "arn:aws:iam::419037307013:role/ecsServiceRole"
+  iam_role = "${aws_iam_role.role_service.arn}"
 
   load_balancer {
     elb_name = "${aws_elb.web.id}"
@@ -218,12 +269,13 @@ resource "aws_ecs_service" "web" {
     container_port = 1337
   }
 }
+# dbservice
 resource "aws_ecs_service" "db" {
   name = "db"
   cluster = "${aws_ecs_cluster.a.id}"
   task_definition = "${aws_ecs_task_definition.dbtask.arn}"
   desired_count = 1
-  iam_role = "arn:aws:iam::419037307013:role/ecsServiceRole"
+  iam_role = "${aws_iam_role.role_service.arn}"
 
   load_balancer {
     elb_name = "${aws_elb.db.id}"
@@ -232,7 +284,12 @@ resource "aws_ecs_service" "db" {
   }
 }
 
-
+# webtask
+resource "aws_ecs_task_definition" "webtask" {
+  family = "webtask"
+  container_definitions = "${file("task-definitions/webtask.json")}"
+}
+# dbtask
 resource "aws_ecs_task_definition" "dbtask" {
   family = "dbtask"
   container_definitions = "${file("task-definitions/dbtask.json")}"
@@ -241,7 +298,8 @@ resource "aws_ecs_task_definition" "dbtask" {
     host_path = "/data/db"
   }
 }
-resource "aws_ecs_task_definition" "webtask" {
-  family = "webtask"
-  container_definitions = "${file("task-definitions/webtask.json")}"
+
+
+output "role" {
+  value = "${aws_iam_role.role.arn}"
 }

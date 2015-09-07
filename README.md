@@ -147,13 +147,22 @@ one cannot easily run most docker containers and docker has not been ported
 (completely) anyways, but for sure it's not a great because it uses a VM.
 This means, one has to run docker containers in a VM on OS X.
 
-Let me quote Bryan Cantrill:
+Let me quote [Bryan Cantrill](https://github.com/bcantrill): https://www.youtube.com/watch?v=Ll50EFquwSo
 
 > People are running OS containers in VMs - don't do this. God is angry that you're
 doing this. God's like: What the hell? I dropped you containers there a while ago
 and I had some other work to do, and I just came back and what the hell is this?
 
-_(Actually this quote is a little bit missplaced because it was made to emphasize
-the solved solution of security concerns and docker containers, but it works here as well.)_
+_(Actually this quote was made to emphasize the (solved) "problem" regarding security concerns with docker containers, but it works here as well.)_
 
+Packer and Atlas are here to save us. The `packer push` command pushes a packer
+build file to the Atlas build service, which than generates our docker images - fast
+and without eating our development machines resources.
 
+But besides this awesome, easy, external docker image build-service, using Packer
+comes with another advantage: moving your infrastructure to another cloud provider 
+or even to on-prem. becomes as easy as flipping a switch.
+
+Because the docker images where given, we didn't had to build these images but 
+I'll show you how a packer build file looks like for a real world application 
+a **[keystone.js](http://keystonejs.com/) CMS** in a second mini-tutorial on Packer, Atlas, Terraform and containers.
