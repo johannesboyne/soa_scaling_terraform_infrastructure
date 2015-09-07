@@ -623,6 +623,10 @@ a `variables.tf` file).
 Constructing our infrastructure is as easy as: `terraform apply` and destroying
 it afterwards can be achieved by running: `terraform destroy`.
 
+Running these commands takes some time, 1-2 minutes, depends on the AWS load.
+Plus, wait a minute before accessing the services through the load-
+balancers, because the instances have to be initiated and added before.
+
 ####Using Packer and Atlas
 
 Right now, we only have used Terraform to codify our infrastructure and 
@@ -672,3 +676,4 @@ diffs didn't match during apply. This is a bug with Terraform and should be repo
 ```
 
 `->` delete the `terraform.tfstate*` file(s).
+
